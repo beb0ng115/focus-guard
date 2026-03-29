@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Focus Guard — Block Reels & Shorts",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "Block YouTube Shorts, Facebook Reels, and other distractions. AI-powered content filtering with Gemini.",
-  "permissions": ["storage", "declarativeNetRequest"],
+  "permissions": ["storage", "declarativeNetRequest", "activeTab"],
   "host_permissions": [
     "https://www.youtube.com/*",
     "https://www.facebook.com/*",

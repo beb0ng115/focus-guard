@@ -102,7 +102,10 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
     const result = await response.json();
     const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    const parsed = JSON.parse(responseText.trim());
+    let jsonStr = responseText.trim();
+    const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) jsonStr = fenceMatch[1].trim();
+    const parsed = JSON.parse(jsonStr);
     return { block: !!parsed.block, reason: parsed.reason || "" };
   } catch {
     return { block: false, reason: "" };
@@ -111,9 +114,12 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
 // --- Video Category Classification ---
 async function classifyVideoCategories(videos) {
-  // videos = [{ id: "xxx", title: "video title", channel: "channel name" }, ...]
+  console.log("[FocusGuard BG] classifyVideoCategories called, videos:", videos.length);
   const data = await chrome.storage.local.get(["geminiApiKey", "geminiModel"]);
-  if (!data.geminiApiKey || videos.length === 0) return { categories: {} };
+  if (!data.geminiApiKey || videos.length === 0) {
+    console.log("[FocusGuard BG] No API key or empty videos");
+    return { categories: {} };
+  }
 
   const model = data.geminiModel || "gemini-2.0-flash";
 
@@ -149,11 +155,19 @@ Respond with ONLY a JSON object mapping video number to category (no markdown, n
       }),
     });
 
-    if (!response.ok) return { categories: {} };
+    if (!response.ok) {
+      console.error("[FocusGuard BG] Gemini API error:", response.status, await response.text());
+      return { categories: {} };
+    }
 
     const result = await response.json();
     const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    const parsed = JSON.parse(responseText.trim());
+    console.log("[FocusGuard BG] Gemini raw response:", responseText);
+    // Strip markdown code fences if present (Gemini sometimes wraps in ```json ... ```)
+    let jsonStr = responseText.trim();
+    const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) jsonStr = fenceMatch[1].trim();
+    const parsed = JSON.parse(jsonStr);
 
     // Map back: { videoId: category }
     const mapped = {};
@@ -173,7 +187,8 @@ Respond with ONLY a JSON object mapping video number to category (no markdown, n
     await chrome.storage.local.set({ detectedCategories: counts });
 
     return { categories: mapped };
-  } catch {
+  } catch (err) {
+    console.error("[FocusGuard BG] classifyVideoCategories error:", err);
     return { categories: {} };
   }
 }

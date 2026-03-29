@@ -263,6 +263,7 @@
   if (hostname === "www.youtube.com") {
     document.addEventListener("yt-navigate-finish", () => {
       if (enabled) checkUrlBlock();
+      if (catDetectEnabled) scheduleCatScan();
     });
   }
 
@@ -295,6 +296,7 @@
   // Re-scan on DOM changes (debounced)
   const aiObserver = new MutationObserver(() => {
     if (aiEnabled) scheduleAiScan();
+    if (catDetectEnabled && hostname === "www.youtube.com") scheduleCatScan();
   });
 
   // Start AI observer once DOM is ready
@@ -380,6 +382,7 @@
   chrome.storage.local.get(["catDetectEnabled", "blockedCategories"], (result) => {
     catDetectEnabled = result.catDetectEnabled === true;
     blockedCategories = result.blockedCategories || {};
+    console.log("[FocusGuard] Category detect:", catDetectEnabled, "hostname:", hostname);
     if (catDetectEnabled && hostname === "www.youtube.com") scheduleCatScan();
   });
 
@@ -412,10 +415,12 @@
 
   async function scanAndClassifyVideos() {
     if (hostname !== "www.youtube.com") return;
+    console.log("[FocusGuard] scanAndClassifyVideos() running...");
 
     const videoItems = document.querySelectorAll(
       "ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer"
     );
+    console.log("[FocusGuard] Found video items:", videoItems.length);
 
     const unclassified = [];
     videoItems.forEach((item) => {
@@ -445,16 +450,30 @@
       });
     });
 
-    if (unclassified.length === 0) return;
+    console.log("[FocusGuard] Unclassified videos:", unclassified.length);
+    if (unclassified.length === 0) {
+      // Retry once after 3s in case YouTube hasn't rendered videos yet
+      if (!scanAndClassifyVideos._retried) {
+        scanAndClassifyVideos._retried = true;
+        setTimeout(() => {
+          scanAndClassifyVideos._retried = false;
+          scanAndClassifyVideos();
+        }, 3000);
+      }
+      return;
+    }
+    scanAndClassifyVideos._retried = false;
 
     // Batch up to 15 at a time
     const batch = unclassified.slice(0, 15);
 
     try {
+      console.log("[FocusGuard] Sending classifyVideos message, batch size:", batch.length);
       const result = await chrome.runtime.sendMessage({
         type: "classifyVideos",
         videos: batch.map(({ id, title, channel }) => ({ id, title, channel })),
       });
+      console.log("[FocusGuard] classifyVideos result:", JSON.stringify(result));
 
       if (result?.categories) {
         batch.forEach((item) => {
@@ -471,8 +490,8 @@
           }
         });
       }
-    } catch {
-      // Extension context invalidated
+    } catch (err) {
+      console.error("[FocusGuard] classifyVideos error:", err);
     }
   }
 
