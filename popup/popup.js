@@ -74,6 +74,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // --- FB Suggestions Toggle ---
+  const fbSuggestToggle = document.getElementById("fbSuggestToggle");
+
+  chrome.storage.local.get(["blockFbSuggestions"], (result) => {
+    fbSuggestToggle.checked = result.blockFbSuggestions !== false;
+  });
+
+  fbSuggestToggle.addEventListener("change", () => {
+    chrome.storage.local.set({ blockFbSuggestions: fbSuggestToggle.checked });
+  });
+
   // --- AI Detect Tab ---
   const aiToggle = document.getElementById("aiToggle");
   const aiStatusEl = document.getElementById("aiStatus");

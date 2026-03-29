@@ -42,6 +42,13 @@
         // Stories + Reels combined section at top
         'div[aria-label="Stories and reels"]',
       ],
+      // Suggested/Sponsored content selectors
+      suggestionSelectors: [
+        // "Suggested for you" sections
+        'div[data-pagelet*="FeedUnit"]:has(span:is([dir="auto"]):is(:where(:text("Suggested for you"))))',
+        // Sponsored posts
+        'div[data-pagelet*="FeedUnit"]:has(a[href*="/ads/"])',
+      ],
       urlBlock: /\/(reel|reels)\//,
     },
     "m.facebook.com": {
@@ -49,6 +56,7 @@
         'a[href*="/reel/"]',
         'a[href*="/reels/"]',
       ],
+      suggestionSelectors: [],
       urlBlock: /\/(reel|reels)\//,
     },
     "www.tiktok.com": {
@@ -69,10 +77,13 @@
   if (!config) return;
 
   let enabled = true;
+  let blockFbSuggestions = true;
+  const selectors = config.selectors;
 
   // Load state from storage
-  chrome.storage.local.get(["focusGuardEnabled"], (result) => {
-    enabled = result.focusGuardEnabled !== false; // default: enabled
+  chrome.storage.local.get(["focusGuardEnabled", "blockFbSuggestions"], (result) => {
+    enabled = result.focusGuardEnabled !== false;
+    blockFbSuggestions = result.blockFbSuggestions !== false; // default: enabled
     if (enabled) {
       applyBlocking();
       checkUrlBlock();
@@ -89,6 +100,10 @@
       } else {
         removeBlocking();
       }
+    }
+    if (changes.blockFbSuggestions) {
+      blockFbSuggestions = changes.blockFbSuggestions.newValue !== false;
+      if (enabled) hideMatchingElements();
     }
   });
 
@@ -145,9 +160,6 @@
   function hideMatchingElements() {
     if (!enabled || !config.selectors) return;
 
-    // Don't hide body for non-TikTok sites
-    const selectors = hostname === "www.tiktok.com" ? config.selectors : config.selectors;
-
     for (const selector of selectors) {
       try {
         const elements = document.querySelectorAll(selector);
@@ -166,6 +178,34 @@
         // :has() not supported in older browsers, CSS fallback handles it
       }
     }
+
+    // Hide Facebook suggested/sponsored content
+    if (blockFbSuggestions && config.suggestionSelectors) {
+      hideFbSuggestions();
+    }
+  }
+
+  function hideFbSuggestions() {
+    if (hostname !== "www.facebook.com" && hostname !== "m.facebook.com") return;
+
+    // Find all feed units and check for "Suggested for you" / "Sponsored" text
+    const feedUnits = document.querySelectorAll('div[data-pagelet*="FeedUnit"], div[role="article"]');
+    feedUnits.forEach((unit) => {
+      if (unit.hasAttribute("data-focus-guard-hidden")) return;
+
+      const text = unit.textContent || "";
+      const isSuggested = /Suggested for you|Suggested|Được đề xuất/i.test(text);
+      const isSponsored = /Sponsored|Được tài trợ/i.test(text);
+
+      // Also check for links that indicate non-friend content
+      const hasLikePageLink = unit.querySelector('a[href*="/pages/"], a[href*="?ref=nf_target"]');
+
+      if (isSuggested || isSponsored || hasLikePageLink) {
+        unit.setAttribute("data-focus-guard-hidden", "true");
+        unit.setAttribute("data-fb-suggestion", "true");
+        unit.style.setProperty("display", "none", "important");
+      }
+    });
   }
 
   let observer = null;

@@ -147,6 +147,28 @@ input:checked + .slider::before {
   font-size: 16px;
 }
 
+/* Section divider */
+.section-divider {
+  border-top: 1px solid #222;
+  margin: 12px 0;
+}
+
+.toggle-row.small {
+  padding: 8px 14px;
+  margin-bottom: 4px;
+}
+
+.toggle-row.small .label {
+  font-size: 13px;
+}
+
+.hint {
+  font-size: 11px;
+  color: #555;
+  padding: 0 14px;
+  margin-bottom: 12px;
+}
+
 /* Tabs */
 .tabs {
   display: flex;
