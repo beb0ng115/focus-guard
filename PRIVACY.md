@@ -30,7 +30,7 @@ Focus Guard does **not**:
 
 ## Contact
 
-For questions about this privacy policy, contact: **[your-email@example.com]**
+For questions about this privacy policy, contact: **chicong115@gmail.com**
 
 ## Changes
 
