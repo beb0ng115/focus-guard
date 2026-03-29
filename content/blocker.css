@@ -1,0 +1,27 @@
+/* Focus Guard — CSS fallback for hiding Reels/Shorts */
+
+/* YouTube Shorts */
+ytd-rich-shelf-renderer[is-shorts],
+ytd-reel-shelf-renderer,
+ytd-shorts,
+ytd-guide-entry-renderer:has(a[title="Shorts"]),
+ytd-mini-guide-entry-renderer:has(a[title="Shorts"]),
+ytd-rich-item-renderer:has(a[href*="/shorts/"]),
+ytd-compact-video-renderer:has(a[href*="/shorts/"]),
+ytd-video-renderer:has(a[href*="/shorts/"]),
+ytd-grid-video-renderer:has(a[href*="/shorts/"]) {
+  display: none !important;
+}
+
+/* Facebook Reels */
+[aria-label="Reels"],
+div[data-pagelet*="Reels"],
+div[aria-label="Stories and reels"] {
+  display: none !important;
+}
+
+/* Instagram Reels nav */
+a[href="/reels/"],
+a[href*="/reels/"] {
+  display: none !important;
+}

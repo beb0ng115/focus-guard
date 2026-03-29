@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Guard</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span class="shield">🛡️</span>
+      <h1>Focus Guard</h1>
+    </div>
+
+    <div class="toggle-row">
+      <span class="label">Block Reels & Shorts</span>
+      <label class="switch">
+        <input type="checkbox" id="mainToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="status" id="status">Protecting you ✓</div>
+
+    <div class="sites">
+      <div class="site-row">
+        <label><input type="checkbox" data-site="youtube" checked> YouTube Shorts</label>
+      </div>
+      <div class="site-row">
+        <label><input type="checkbox" data-site="facebook" checked> Facebook Reels</label>
+      </div>
+      <div class="site-row">
+        <label><input type="checkbox" data-site="tiktok" checked> TikTok (entire site)</label>
+      </div>
+      <div class="site-row">
+        <label><input type="checkbox" data-site="instagram" checked> Instagram Reels</label>
+      </div>
+    </div>
+
+    <div class="stats">
+      <span id="blockCount">0</span> blocks today
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
