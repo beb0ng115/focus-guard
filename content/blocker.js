@@ -188,23 +188,45 @@
   function hideFbSuggestions() {
     if (hostname !== "www.facebook.com" && hostname !== "m.facebook.com") return;
 
-    // Find all feed units and check for "Suggested for you" / "Sponsored" text
-    const feedUnits = document.querySelectorAll('div[data-pagelet*="FeedUnit"], div[role="article"]');
+    // Target all feed-level containers
+    const feedUnits = document.querySelectorAll('div[data-pagelet*="FeedUnit"], div[role="article"], div[data-pagelet*="GroupInline"]');
     feedUnits.forEach((unit) => {
       if (unit.hasAttribute("data-focus-guard-hidden")) return;
 
       const text = unit.textContent || "";
-      const isSuggested = /Suggested for you|Suggested|Được đề xuất/i.test(text);
+
+      // Suggested content — EN + VI
+      const isSuggested = /Suggested for you|Suggested groups|Suggested|Gợi ý cho bạn|Gợi ý nhóm|Gợi ý trang|Gợi ý|Được đề xuất/i.test(text);
+
+      // Sponsored — EN + VI
       const isSponsored = /Sponsored|Được tài trợ/i.test(text);
 
-      // Also check for links that indicate non-friend content
-      const hasLikePageLink = unit.querySelector('a[href*="/pages/"], a[href*="?ref=nf_target"]');
+      // Page/follow posts (not friends) — detect "Theo dõi" badge or "Follow" link near page name
+      const isPagePost = /· Theo dõi|· Follow/i.test(text);
 
-      if (isSuggested || isSponsored || hasLikePageLink) {
+      // Group join suggestions
+      const hasJoinBtn = unit.querySelector('a[href*="/groups/"], div[role="button"]');
+      const isGroupSuggestion = /Tham gia nhóm|Join group|Join Group/i.test(text) && hasJoinBtn;
+
+      // Links indicating non-friend content
+      const hasPageLink = unit.querySelector('a[href*="/pages/"], a[href*="?ref=nf_target"]');
+
+      if (isSuggested || isSponsored || isPagePost || isGroupSuggestion || hasPageLink) {
         unit.setAttribute("data-focus-guard-hidden", "true");
         unit.setAttribute("data-fb-suggestion", "true");
         unit.style.setProperty("display", "none", "important");
       }
+    });
+
+    // Also hide standalone suggestion sections (group suggestions carousel, page suggestions)
+    const suggestionSections = document.querySelectorAll(
+      'div[data-pagelet*="GroupsYouShouldJoin"], ' +
+      'div[data-pagelet*="PagesYouMayLike"], ' +
+      'div[data-pagelet*="SuggestedGroups"]'
+    );
+    suggestionSections.forEach((section) => {
+      section.setAttribute("data-focus-guard-hidden", "true");
+      section.style.setProperty("display", "none", "important");
     });
   }
 
