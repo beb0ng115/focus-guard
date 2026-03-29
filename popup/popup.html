@@ -13,33 +13,88 @@
       <h1>Focus Guard</h1>
     </div>
 
-    <div class="toggle-row">
-      <span class="label">Block Reels & Shorts</span>
-      <label class="switch">
-        <input type="checkbox" id="mainToggle" checked>
-        <span class="slider"></span>
-      </label>
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="blocker">Blocker</button>
+      <button class="tab" data-tab="ai">AI Detect</button>
     </div>
 
-    <div class="status" id="status">Protecting you ✓</div>
+    <!-- Blocker Tab -->
+    <div class="tab-content active" id="tab-blocker">
+      <div class="toggle-row">
+        <span class="label">Block Reels & Shorts</span>
+        <label class="switch">
+          <input type="checkbox" id="mainToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
 
-    <div class="sites">
-      <div class="site-row">
-        <label><input type="checkbox" data-site="youtube" checked> YouTube Shorts</label>
+      <div class="status" id="status">Protecting you ✓</div>
+
+      <div class="sites">
+        <div class="site-row">
+          <label><input type="checkbox" data-site="youtube" checked> YouTube Shorts</label>
+        </div>
+        <div class="site-row">
+          <label><input type="checkbox" data-site="facebook" checked> Facebook Reels</label>
+        </div>
+        <div class="site-row">
+          <label><input type="checkbox" data-site="tiktok" checked> TikTok (entire site)</label>
+        </div>
+        <div class="site-row">
+          <label><input type="checkbox" data-site="instagram" checked> Instagram Reels</label>
+        </div>
       </div>
-      <div class="site-row">
-        <label><input type="checkbox" data-site="facebook" checked> Facebook Reels</label>
-      </div>
-      <div class="site-row">
-        <label><input type="checkbox" data-site="tiktok" checked> TikTok (entire site)</label>
-      </div>
-      <div class="site-row">
-        <label><input type="checkbox" data-site="instagram" checked> Instagram Reels</label>
+
+      <div class="stats">
+        <span id="blockCount">0</span> blocks today
       </div>
     </div>
 
-    <div class="stats">
-      <span id="blockCount">0</span> blocks today
+    <!-- AI Detect Tab -->
+    <div class="tab-content" id="tab-ai">
+      <div class="toggle-row">
+        <span class="label">AI Content Filter</span>
+        <label class="switch">
+          <input type="checkbox" id="aiToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="ai-status" id="aiStatus">Not configured</div>
+
+      <div class="ai-form">
+        <label class="field-label" for="apiKey">Gemini API Key</label>
+        <div class="input-row">
+          <input type="password" id="apiKey" placeholder="AIza...">
+          <button id="toggleKeyVisibility" class="icon-btn" title="Show/Hide">👁</button>
+        </div>
+        <a class="help-link" href="https://aistudio.google.com/apikey" target="_blank">Get free API key →</a>
+
+        <label class="field-label" for="aiModel">Model</label>
+        <select id="aiModel">
+          <option value="gemini-2.0-flash">gemini-2.0-flash (fast, free)</option>
+          <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite (fastest)</option>
+          <option value="gemini-1.5-flash">gemini-1.5-flash (balanced)</option>
+          <option value="gemini-1.5-pro">gemini-1.5-pro (most accurate)</option>
+        </select>
+
+        <label class="field-label">Block content about</label>
+        <div class="ai-categories">
+          <label><input type="checkbox" data-cat="nsfw" checked> NSFW / Adult</label>
+          <label><input type="checkbox" data-cat="clickbait" checked> Clickbait / Rage-bait</label>
+          <label><input type="checkbox" data-cat="gossip" checked> Celebrity gossip</label>
+          <label><input type="checkbox" data-cat="doom"> Doom-scrolling / Negativity</label>
+          <label><input type="checkbox" data-cat="gambling"> Gambling / Scams</label>
+        </div>
+
+        <button id="saveAiSettings" class="save-btn">Save Settings</button>
+        <div class="ai-save-status" id="aiSaveStatus"></div>
+      </div>
+
+      <div class="stats">
+        <span id="aiBlockCount">0</span> AI blocks today
+      </div>
     </div>
   </div>
 

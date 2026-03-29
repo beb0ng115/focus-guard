@@ -5,7 +5,7 @@
 }
 
 body {
-  width: 300px;
+  width: 320px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: #1a1a2e;
   color: #eee;
@@ -145,4 +145,193 @@ input:checked + .slider::before {
   color: #e94560;
   font-weight: 700;
   font-size: 16px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: #0f1629;
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #aaa;
+}
+
+.tab.active {
+  background: #16213e;
+  color: #e94560;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* AI Detect Tab */
+.ai-status {
+  text-align: center;
+  font-size: 13px;
+  margin-bottom: 14px;
+  font-weight: 500;
+}
+
+.ai-status.on {
+  color: #4ecca3;
+}
+
+.ai-status.off {
+  color: #666;
+}
+
+.ai-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.field-label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.input-row input {
+  flex: 1;
+}
+
+.icon-btn {
+  background: #16213e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #aaa;
+  cursor: pointer;
+  padding: 0 8px;
+  font-size: 14px;
+}
+
+.icon-btn:hover {
+  border-color: #e94560;
+}
+
+.ai-form input[type="text"],
+.ai-form input[type="password"],
+.ai-form select {
+  width: 100%;
+  padding: 8px 10px;
+  background: #16213e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #eee;
+  font-size: 13px;
+  outline: none;
+}
+
+.ai-form input:focus,
+.ai-form select:focus {
+  border-color: #e94560;
+}
+
+.ai-form select {
+  cursor: pointer;
+}
+
+.ai-form select option {
+  background: #16213e;
+}
+
+.help-link {
+  font-size: 11px;
+  color: #e94560;
+  text-decoration: none;
+  margin-top: -4px;
+}
+
+.help-link:hover {
+  text-decoration: underline;
+}
+
+.ai-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-categories label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #ccc;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.ai-categories label:hover {
+  background: #16213e;
+}
+
+.ai-categories input[type="checkbox"] {
+  accent-color: #e94560;
+  width: 14px;
+  height: 14px;
+}
+
+.save-btn {
+  margin-top: 6px;
+  padding: 9px 0;
+  background: #e94560;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.save-btn:hover {
+  background: #d63851;
+}
+
+.ai-save-status {
+  text-align: center;
+  font-size: 12px;
+  min-height: 16px;
+}
+
+.ai-save-status.success {
+  color: #4ecca3;
+}
+
+.ai-save-status.error {
+  color: #e94560;
 }

@@ -131,7 +131,7 @@
             display: inline-block; padding: 12px 32px;
             background: #e94560; color: white; text-decoration: none;
             border-radius: 8px; font-weight: 600;
-          ">← Về trang chính</a>
+          ">← Back to homepage</a>
         </div>
       </body>
     `;
@@ -202,5 +202,109 @@
     document.addEventListener("yt-navigate-finish", () => {
       if (enabled) checkUrlBlock();
     });
+  }
+
+  // --- AI Content Filtering ---
+  let aiEnabled = false;
+  const analyzedElements = new WeakSet();
+  const AI_DEBOUNCE_MS = 1500;
+  let aiScanTimer = null;
+
+  chrome.storage.local.get(["aiEnabled"], (result) => {
+    aiEnabled = result.aiEnabled === true;
+    if (aiEnabled) scheduleAiScan();
+  });
+
+  chrome.storage.onChanged.addListener((changes) => {
+    if (changes.aiEnabled) {
+      aiEnabled = changes.aiEnabled.newValue === true;
+      if (aiEnabled) scheduleAiScan();
+    }
+  });
+
+  function scheduleAiScan() {
+    if (aiScanTimer) return;
+    aiScanTimer = setTimeout(() => {
+      aiScanTimer = null;
+      scanContentWithAI();
+    }, AI_DEBOUNCE_MS);
+  }
+
+  // Re-scan on DOM changes (debounced)
+  const aiObserver = new MutationObserver(() => {
+    if (aiEnabled) scheduleAiScan();
+  });
+
+  // Start AI observer once DOM is ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      aiObserver.observe(document.body, { childList: true, subtree: true });
+    });
+  } else {
+    aiObserver.observe(document.documentElement, { childList: true, subtree: true });
+  }
+
+  function getContentSelectors() {
+    switch (hostname) {
+      case "www.youtube.com":
+        return {
+          items: "ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer",
+          title: "#video-title, #title",
+          text: "#description-text, #metadata-line, yt-formatted-string",
+        };
+      case "www.facebook.com":
+      case "m.facebook.com":
+        return {
+          items: 'div[role="article"], div[data-pagelet*="FeedUnit"]',
+          title: 'a[role="link"] strong, h2, h3',
+          text: 'div[data-ad-comet-preview="message"], div[dir="auto"]',
+        };
+      default:
+        return {
+          items: "article, div[role='article']",
+          title: "h1, h2, h3, a",
+          text: "p, span",
+        };
+    }
+  }
+
+  async function scanContentWithAI() {
+    if (!aiEnabled) return;
+
+    const selectors = getContentSelectors();
+    const items = document.querySelectorAll(selectors.items);
+
+    for (const item of items) {
+      if (analyzedElements.has(item)) continue;
+      if (item.hasAttribute("data-focus-guard-hidden")) continue;
+      if (item.hasAttribute("data-ai-analyzed")) continue;
+
+      analyzedElements.add(item);
+      item.setAttribute("data-ai-analyzed", "true");
+
+      const titleEl = item.querySelector(selectors.title);
+      const textEl = item.querySelector(selectors.text);
+      const title = (titleEl?.textContent || "").trim().slice(0, 200);
+      const text = (textEl?.textContent || "").trim().slice(0, 500);
+
+      if (!title && !text) continue;
+
+      try {
+        const result = await chrome.runtime.sendMessage({
+          type: "analyzeContent",
+          title,
+          text,
+        });
+
+        if (result?.block) {
+          item.setAttribute("data-focus-guard-hidden", "true");
+          item.setAttribute("data-ai-reason", result.reason || "");
+          item.style.setProperty("display", "none", "important");
+          chrome.runtime.sendMessage({ type: "aiBlocked" });
+        }
+      } catch {
+        // Extension context invalidated or error — skip
+      }
+    }
   }
 })();
