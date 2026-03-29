@@ -86,6 +86,19 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- AI Detect Tab ---
+
+  // Sub-tabs
+  const subTabs = document.querySelectorAll(".sub-tab");
+  const subTabContents = document.querySelectorAll(".sub-tab-content");
+  subTabs.forEach((st) => {
+    st.addEventListener("click", () => {
+      subTabs.forEach((t) => t.classList.remove("active"));
+      subTabContents.forEach((c) => c.classList.remove("active"));
+      st.classList.add("active");
+      document.getElementById("subtab-" + st.dataset.subtab).classList.add("active");
+    });
+  });
+
   const aiToggle = document.getElementById("aiToggle");
   const aiStatusEl = document.getElementById("aiStatus");
   const apiKeyInput = document.getElementById("apiKey");
@@ -179,5 +192,108 @@ document.addEventListener("DOMContentLoaded", () => {
       aiStatusEl.textContent = "Configured but disabled";
       aiStatusEl.className = "ai-status off";
     }
+  }
+
+  // --- Categories Sub-tab ---
+  const catDetectToggle = document.getElementById("catDetectToggle");
+  const detectedCatsEl = document.getElementById("detectedCategories");
+  const catLoadingEl = document.getElementById("catLoading");
+  const scanNowBtn = document.getElementById("scanNowBtn");
+  const clearCatsBtn = document.getElementById("clearCatsBtn");
+
+  // Load category detection state
+  chrome.storage.local.get(["catDetectEnabled", "detectedCategories", "blockedCategories"], (result) => {
+    catDetectToggle.checked = result.catDetectEnabled === true;
+    renderCategories(result.detectedCategories || {}, result.blockedCategories || {});
+  });
+
+  catDetectToggle.addEventListener("change", () => {
+    chrome.storage.local.set({ catDetectEnabled: catDetectToggle.checked });
+  });
+
+  // Scan current page
+  scanNowBtn.addEventListener("click", () => {
+    scanNowBtn.textContent = "Scanning...";
+    scanNowBtn.disabled = true;
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs[0]) return;
+      chrome.tabs.sendMessage(tabs[0].id, { type: "scanCategories" }, (response) => {
+        scanNowBtn.textContent = "Scan Current Page";
+        scanNowBtn.disabled = false;
+        if (response?.status === "ok") {
+          // Reload categories from storage
+          setTimeout(() => {
+            chrome.storage.local.get(["detectedCategories", "blockedCategories"], (r) => {
+              renderCategories(r.detectedCategories || {}, r.blockedCategories || {});
+            });
+          }, 3000); // wait for AI to process
+        }
+      });
+    });
+  });
+
+  // Clear categories
+  clearCatsBtn.addEventListener("click", () => {
+    chrome.storage.local.set({ detectedCategories: {}, blockedCategories: {} }, () => {
+      renderCategories({}, {});
+    });
+  });
+
+  // Listen for storage changes (categories updated from content script)
+  chrome.storage.onChanged.addListener((changes) => {
+    if (changes.detectedCategories) {
+      chrome.storage.local.get(["blockedCategories"], (r) => {
+        renderCategories(changes.detectedCategories.newValue || {}, r.blockedCategories || {});
+      });
+    }
+  });
+
+  function renderCategories(detected, blocked) {
+    // detected = { "Entertainment": 5, "Gaming": 3, "Education": 2, ... }
+    const entries = Object.entries(detected).sort((a, b) => b[1] - a[1]);
+
+    if (entries.length === 0) {
+      catLoadingEl.style.display = "block";
+      // Remove any existing category rows
+      detectedCatsEl.querySelectorAll(".cat-row").forEach((r) => r.remove());
+      return;
+    }
+
+    catLoadingEl.style.display = "none";
+    // Remove old rows
+    detectedCatsEl.querySelectorAll(".cat-row").forEach((r) => r.remove());
+
+    entries.forEach(([category, count]) => {
+      const row = document.createElement("div");
+      row.className = "cat-row";
+
+      const isBlocked = blocked[category] === true;
+
+      row.innerHTML = `
+        <div class="cat-info">
+          <span class="cat-name">${category}</span>
+          <span class="cat-count">${count} videos</span>
+        </div>
+        <label class="switch small-switch">
+          <input type="checkbox" data-category="${category}" ${isBlocked ? "" : "checked"}>
+          <span class="slider"></span>
+        </label>
+      `;
+
+      const checkbox = row.querySelector("input");
+      checkbox.addEventListener("change", () => {
+        chrome.storage.local.get(["blockedCategories"], (r) => {
+          const bc = r.blockedCategories || {};
+          if (checkbox.checked) {
+            delete bc[category];
+          } else {
+            bc[category] = true;
+          }
+          chrome.storage.local.set({ blockedCategories: bc });
+        });
+      });
+
+      detectedCatsEl.appendChild(row);
+    });
   }
 });

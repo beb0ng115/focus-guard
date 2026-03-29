@@ -369,4 +369,134 @@
       }
     }
   }
+
+  // --- YouTube Category Detection & Filtering ---
+  let catDetectEnabled = false;
+  let blockedCategories = {};
+  const categorizedElements = new WeakSet();
+  const CAT_DEBOUNCE_MS = 2000;
+  let catScanTimer = null;
+
+  chrome.storage.local.get(["catDetectEnabled", "blockedCategories"], (result) => {
+    catDetectEnabled = result.catDetectEnabled === true;
+    blockedCategories = result.blockedCategories || {};
+    if (catDetectEnabled && hostname === "www.youtube.com") scheduleCatScan();
+  });
+
+  chrome.storage.onChanged.addListener((changes) => {
+    if (changes.catDetectEnabled) {
+      catDetectEnabled = changes.catDetectEnabled.newValue === true;
+      if (catDetectEnabled && hostname === "www.youtube.com") scheduleCatScan();
+    }
+    if (changes.blockedCategories) {
+      blockedCategories = changes.blockedCategories.newValue || {};
+      if (hostname === "www.youtube.com") applyCategoryBlocking();
+    }
+  });
+
+  // Listen for scan request from popup
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === "scanCategories") {
+      scanAndClassifyVideos().then(() => sendResponse({ status: "ok" }));
+      return true;
+    }
+  });
+
+  function scheduleCatScan() {
+    if (catScanTimer) return;
+    catScanTimer = setTimeout(() => {
+      catScanTimer = null;
+      scanAndClassifyVideos();
+    }, CAT_DEBOUNCE_MS);
+  }
+
+  async function scanAndClassifyVideos() {
+    if (hostname !== "www.youtube.com") return;
+
+    const videoItems = document.querySelectorAll(
+      "ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer"
+    );
+
+    const unclassified = [];
+    videoItems.forEach((item) => {
+      if (categorizedElements.has(item)) return;
+      if (item.hasAttribute("data-focus-guard-hidden")) return;
+
+      const titleEl = item.querySelector("#video-title, #title");
+      const channelEl = item.querySelector(
+        "ytd-channel-name #text, #channel-name #text, .ytd-channel-name a"
+      );
+      const linkEl = item.querySelector("a[href*='/watch']");
+
+      const title = (titleEl?.textContent || "").trim();
+      const channel = (channelEl?.textContent || "").trim();
+      const href = linkEl?.getAttribute("href") || "";
+      const videoId = new URLSearchParams(href.split("?")[1] || "").get("v") || href;
+
+      if (!title || !videoId) return;
+
+      categorizedElements.add(item);
+
+      unclassified.push({
+        id: videoId,
+        title: title.slice(0, 150),
+        channel: channel.slice(0, 50),
+        element: item,
+      });
+    });
+
+    if (unclassified.length === 0) return;
+
+    // Batch up to 15 at a time
+    const batch = unclassified.slice(0, 15);
+
+    try {
+      const result = await chrome.runtime.sendMessage({
+        type: "classifyVideos",
+        videos: batch.map(({ id, title, channel }) => ({ id, title, channel })),
+      });
+
+      if (result?.categories) {
+        batch.forEach((item) => {
+          const category = result.categories[item.id];
+          if (category) {
+            item.element.setAttribute("data-video-category", category);
+
+            // Hide if category is blocked
+            if (blockedCategories[category]) {
+              item.element.setAttribute("data-focus-guard-hidden", "true");
+              item.element.style.setProperty("display", "none", "important");
+              chrome.runtime.sendMessage({ type: "aiBlocked" });
+            }
+          }
+        });
+      }
+    } catch {
+      // Extension context invalidated
+    }
+  }
+
+  function applyCategoryBlocking() {
+    // Re-apply blocking based on updated blockedCategories
+    const allCategorized = document.querySelectorAll("[data-video-category]");
+    allCategorized.forEach((el) => {
+      const cat = el.getAttribute("data-video-category");
+      if (blockedCategories[cat]) {
+        el.setAttribute("data-focus-guard-hidden", "true");
+        el.style.setProperty("display", "none", "important");
+      } else if (el.hasAttribute("data-fb-suggestion") || el.hasAttribute("data-ai-reason")) {
+        // Keep hidden if blocked by other mechanisms
+      } else {
+        el.removeAttribute("data-focus-guard-hidden");
+        el.style.removeProperty("display");
+      }
+    });
+  }
+
+  // Re-scan on YouTube SPA navigation
+  if (hostname === "www.youtube.com") {
+    document.addEventListener("yt-navigate-finish", () => {
+      if (catDetectEnabled) scheduleCatScan();
+    });
+  }
 })();

@@ -64,44 +64,73 @@
 
     <!-- AI Detect Tab -->
     <div class="tab-content" id="tab-ai">
-      <div class="toggle-row">
-        <span class="label">AI Content Filter</span>
-        <label class="switch">
-          <input type="checkbox" id="aiToggle">
-          <span class="slider"></span>
-        </label>
+
+      <!-- AI Sub-tabs -->
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-subtab="filter">Filter</button>
+        <button class="sub-tab" data-subtab="categories">Categories</button>
       </div>
 
-      <div class="ai-status" id="aiStatus">Not configured</div>
-
-      <div class="ai-form">
-        <label class="field-label" for="apiKey">Gemini API Key</label>
-        <div class="input-row">
-          <input type="password" id="apiKey" placeholder="AIza...">
-          <button id="toggleKeyVisibility" class="icon-btn" title="Show/Hide">👁</button>
-        </div>
-        <a class="help-link" href="https://aistudio.google.com/apikey" target="_blank">Get free API key →</a>
-
-        <label class="field-label" for="aiModel">Model</label>
-        <select id="aiModel">
-          <option value="gemini-2.0-flash">gemini-2.0-flash (fast, free, unlimited)</option>
-          <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite (fastest, unlimited)</option>
-          <option value="gemini-2.5-flash">gemini-2.5-flash (smart, 1K RPM)</option>
-          <option value="gemini-2.5-pro">gemini-2.5-pro (most accurate, 150 RPM)</option>
-          <option value="gemini-3.1-pro">gemini-3.1-pro (latest, 25 RPM)</option>
-        </select>
-
-        <label class="field-label">Block content about</label>
-        <div class="ai-categories">
-          <label><input type="checkbox" data-cat="nsfw" checked> NSFW / Adult</label>
-          <label><input type="checkbox" data-cat="clickbait" checked> Clickbait / Rage-bait</label>
-          <label><input type="checkbox" data-cat="gossip" checked> Celebrity gossip</label>
-          <label><input type="checkbox" data-cat="doom"> Doom-scrolling / Negativity</label>
-          <label><input type="checkbox" data-cat="gambling"> Gambling / Scams</label>
+      <!-- Filter Sub-tab -->
+      <div class="sub-tab-content active" id="subtab-filter">
+        <div class="toggle-row">
+          <span class="label">AI Content Filter</span>
+          <label class="switch">
+            <input type="checkbox" id="aiToggle">
+            <span class="slider"></span>
+          </label>
         </div>
 
-        <button id="saveAiSettings" class="save-btn">Save Settings</button>
-        <div class="ai-save-status" id="aiSaveStatus"></div>
+        <div class="ai-status" id="aiStatus">Not configured</div>
+
+        <div class="ai-form">
+          <label class="field-label" for="apiKey">Gemini API Key</label>
+          <div class="input-row">
+            <input type="password" id="apiKey" placeholder="AIza...">
+            <button id="toggleKeyVisibility" class="icon-btn" title="Show/Hide">👁</button>
+          </div>
+          <a class="help-link" href="https://aistudio.google.com/apikey" target="_blank">Get free API key →</a>
+
+          <label class="field-label" for="aiModel">Model</label>
+          <select id="aiModel">
+            <option value="gemini-2.0-flash">gemini-2.0-flash (fast, free, unlimited)</option>
+            <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite (fastest, unlimited)</option>
+            <option value="gemini-2.5-flash">gemini-2.5-flash (smart, 1K RPM)</option>
+            <option value="gemini-2.5-pro">gemini-2.5-pro (most accurate, 150 RPM)</option>
+            <option value="gemini-3.1-pro">gemini-3.1-pro (latest, 25 RPM)</option>
+          </select>
+
+          <label class="field-label">Block content about</label>
+          <div class="ai-categories">
+            <label><input type="checkbox" data-cat="nsfw" checked> NSFW / Adult</label>
+            <label><input type="checkbox" data-cat="clickbait" checked> Clickbait / Rage-bait</label>
+            <label><input type="checkbox" data-cat="gossip" checked> Celebrity gossip</label>
+            <label><input type="checkbox" data-cat="doom"> Doom-scrolling / Negativity</label>
+            <label><input type="checkbox" data-cat="gambling"> Gambling / Scams</label>
+          </div>
+
+          <button id="saveAiSettings" class="save-btn">Save Settings</button>
+          <div class="ai-save-status" id="aiSaveStatus"></div>
+        </div>
+      </div>
+
+      <!-- Categories Sub-tab -->
+      <div class="sub-tab-content" id="subtab-categories">
+        <div class="toggle-row">
+          <span class="label">Auto-detect Categories</span>
+          <label class="switch">
+            <input type="checkbox" id="catDetectToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="hint">AI detects video categories on YouTube. Toggle off to hide.</div>
+
+        <div id="detectedCategories" class="detected-categories">
+          <div class="cat-loading" id="catLoading">No categories detected yet.<br>Browse YouTube with AI enabled to start.</div>
+        </div>
+
+        <button id="scanNowBtn" class="save-btn secondary">Scan Current Page</button>
+        <button id="clearCatsBtn" class="clear-btn">Reset All Categories</button>
       </div>
 
       <div class="stats">
